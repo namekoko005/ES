@@ -1,54 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Shield, Users, Wallet, CheckCircle, AlertTriangle, MessageSquare, Star, Clock, TrendingUp, Lock, Eye, FileText, Plus, Send, Camera, CreditCard, Phone, Mail, MapPin, User, X, Search } from 'lucide-react';
 
-// Define the type for a chat message
-interface ChatMessage {
-  sender: 'buyer' | 'seller';
-  message: string;
-  time: string;
-}
-
-// Define the type for a transaction
-interface Transaction {
-  id: string;
-  type: 'buyer' | 'seller';
-  item: string;
-  description: string;
-  amount: number;
-  fee: number;
-  status: 'waiting_payment' | 'waiting_confirmation' | 'completed' | 'dispute';
-  otherParty: string;
-  otherPartyId: string;
-  otherPartyRating: number;
-  created: string;
-  completed?: string;
-  buyerConfirmed: boolean;
-  sellerConfirmed: boolean;
-  trackingNumber?: string;
-  escrowId: string;
-  rating?: number;
-  chatMessages: ChatMessage[];
-}
-
-// Define the props for TransactionDetailModal
-interface TransactionDetailModalProps {
-  selectedTransaction: Transaction | null;
-  setSelectedTransaction: (transaction: Transaction | null) => void;
-  chatInput: string;
-  setChatInput: (input: string) => void;
-  handleSendMessage: () => void;
-  setShowDisputeModal: (show: boolean) => void;
-  setShowRatingModal: (show: boolean) => void;
-}
-
-const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({ 
+// แยกคอมโพเนนต์ TransactionDetailModal ออกมาข้างนอก
+const TransactionDetailModal = ({ 
   selectedTransaction, 
   setSelectedTransaction,
   chatInput,
   setChatInput,
   handleSendMessage,
-  setShowDisputeModal,
-  setShowRatingModal
+  setShowDisputeModal
 }) => {
   if (!selectedTransaction) return null;
 
@@ -246,7 +206,7 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
             )}
             {selectedTransaction.status === 'completed' && !selectedTransaction.rating && (
               <button 
-                onClick={() => setShowRatingModal(true)} 
+                onClick={() => {setSelectedTransaction(selectedTransaction); setShowRatingModal(true);}}
                 className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
               >
                 ให้คะแนน
@@ -259,191 +219,23 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   );
 };
 
-// Define props for TabButton
-interface TabButtonProps {
-  id: string;
-  label: string;
-  icon: React.ElementType;
-  active: boolean;
-  onClick: (id: string) => void;
-  badge?: number;
-}
+// ... โค้ดส่วนอื่น ๆ ที่เหลือเหมือนเดิม ...
 
-const TabButton: React.FC<TabButtonProps> = ({ id, label, icon: Icon, active, onClick, badge = 0 }) => (
-  <button
-    onClick={() => onClick(id)}
-    className={`relative flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
-      active 
-        ? 'bg-blue-600 text-white shadow-lg' 
-        : 'text-gray-600 hover:bg-gray-100'
-    }`}
-  >
-    <Icon size={20} />
-    <span className="hidden md:inline">{label}</span>
-    {badge > 0 && (
-      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-        {badge}
-      </span>
-    )}
-  </button>
-);
-
-// Define props for TransactionCard
-interface TransactionCardProps {
-  transaction: Transaction;
-  onViewDetails: (transaction: Transaction) => void;
-}
-
-const TransactionCard: React.FC<TransactionCardProps> = ({ transaction, onViewDetails }) => {
-  const getStatusColor = (status: Transaction['status']) => {
-    switch (status) {
-      case 'waiting_payment': return 'text-orange-600 bg-orange-50';
-      case 'waiting_confirmation': return 'text-yellow-600 bg-yellow-50';
-      case 'completed': return 'text-green-600 bg-green-50';
-      case 'dispute': return 'text-red-600 bg-red-50';
-      default: return 'text-gray-600 bg-gray-50';
-    }
-  };
-
-  const getStatusText = (status: Transaction['status']) => {
-    switch (status) {
-      case 'waiting_payment': return 'รอชำระเงิน';
-      case 'waiting_confirmation': return 'รอการยืนยัน';
-      case 'completed': return 'สำเร็จ';
-      case 'dispute': return 'มีข้อโต้แย้ง';
-      default: return 'ไม่ทราบสถานะ';
-    }
-  };
-
-  const confirmReceived = (transactionId: string) => { /* Logic here */ };
-  const confirmSent = (transactionId: string) => { /* Logic here */ };
-
-  return (
-    <div className="bg-white p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-all">
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex-1">
-          <h3 className="font-semibold text-gray-800 mb-1">{transaction.item}</h3>
-          <p className="text-sm text-gray-600 mb-2">{transaction.description}</p>
-          <div className="flex items-center space-x-4 text-sm text-gray-500">
-            <span>{transaction.type === 'buyer' ? 'ซื้อจาก' : 'ขายให้'}: {transaction.otherParty}</span>
-            <div className="flex items-center space-x-1">
-              <Star size={12} className="text-yellow-400 fill-current" />
-              <span>{transaction.otherPartyRating}</span>
-            </div>
-          </div>
-        </div>
-        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(transaction.status)}`}>
-          {getStatusText(transaction.status)}
-        </span>
-      </div>
-      
-      <div className="flex justify-between items-center mb-4">
-        <div>
-          <span className="text-2xl font-bold text-green-600">
-            ฿{transaction.amount.toLocaleString()}
-          </span>
-          <span className="text-sm text-gray-500 ml-2">
-            (ค่าธรรมเนียม ฿{transaction.fee})
-          </span>
-        </div>
-        <span className="text-sm text-gray-500">{transaction.created}</span>
-      </div>
-
-      {transaction.status === 'waiting_payment' && transaction.type === 'buyer' && (
-        <button 
-          onClick={() => onViewDetails(transaction)}
-          className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition-colors mb-2"
-        >
-          ชำระเงินเข้า Escrow
-        </button>
-      )}
-      {transaction.status === 'waiting_payment' && transaction.type === 'seller' && (
-        <button 
-          onClick={() => onViewDetails(transaction)}
-          className="w-full bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-colors mb-2"
-        >
-          ดูรายละเอียด
-        </button>
-      )}
-
-      {transaction.status === 'waiting_confirmation' && (
-        <div className="space-y-3 mb-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center space-x-2">
-              <CheckCircle size={16} className={transaction.sellerConfirmed ? 'text-green-500' : 'text-gray-300'} />
-              <span>ผู้ขายยืนยันแล้ว</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <CheckCircle size={16} className={transaction.buyerConfirmed ? 'text-green-500' : 'text-gray-300'} />
-              <span>ผู้ซื้อยืนยันแล้ว</span>
-            </div>
-          </div>
-          
-          <div className="flex space-x-2">
-            {!transaction.buyerConfirmed && transaction.type === 'buyer' && (
-              <button 
-                onClick={() => confirmReceived(transaction.id)}
-                className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors"
-              >
-                ยืนยันรับสินค้า
-              </button>
-            )}
-            {!transaction.sellerConfirmed && transaction.type === 'seller' && (
-              <button 
-                onClick={() => confirmSent(transaction.id)}
-                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                ยืนยันส่งแล้ว
-              </button>
-            )}
-            <button 
-              onClick={() => onViewDetails(transaction)}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              ดูรายละเอียด
-            </button>
-          </div>
-        </div>
-      )}
-
-      {transaction.status === 'completed' && (
-        <div className="flex space-x-2">
-          <button 
-            onClick={() => onViewDetails(transaction)}
-            className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            ดูรายละเอียด
-          </button>
-          {!transaction.rating && (
-            <button 
-              onClick={() => onViewDetails(transaction)}
-              className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
-            >
-              ให้คะแนน
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-
-const SecureEscrowApp: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState<string>('dashboard');
-  const [showCreateTransaction, setShowCreateTransaction] = useState<boolean>(false);
-  const [showKYCModal, setShowKYCModal] = useState<boolean>(false);
-  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
-  const [showRatingModal, setShowRatingModal] = useState<boolean>(false);
-  const [showDisputeModal, setShowDisputeModal] = useState<boolean>(false);
-  const [showJoinTransactionModal, setShowJoinTransactionModal] = useState<boolean>(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-  const [newRating, setNewRating] = useState<number>(0);
-  const [ratingComment, setRatingComment] = useState<string>('');
-  const [disputeReason, setDisputeReason] = useState<string>('');
-  const [chatInput, setChatInput] = useState<string>('');
-  const [transactionFilter, setTransactionFilter] = useState<string>('all');
-  const [joinTransactionId, setJoinTransactionId] = useState<string>('');
+const SecureEscrowApp = () => {
+  const [currentTab, setCurrentTab] = useState('dashboard');
+  const [showCreateTransaction, setShowCreateTransaction] = useState(false);
+  const [showKYCModal, setShowKYCModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [showJoinTransactionModal, setShowJoinTransactionModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [newRating, setNewRating] = useState(0);
+  const [ratingComment, setRatingComment] = useState('');
+  const [disputeReason, setDisputeReason] = useState('');
+  const [chatInput, setChatInput] = useState(''); // ใช้ state นี้สำหรับ input chat
+  const [transactionFilter, setTransactionFilter] = useState('all');
+  const [joinTransactionId, setJoinTransactionId] = useState('');
 
   const [user, setUser] = useState({
     id: 'USR001',
@@ -457,7 +249,7 @@ const SecureEscrowApp: React.FC = () => {
     joinDate: '2024-01-15'
   });
 
-  const [transactions, setTransactions] = useState<Transaction[]>([
+  const [transactions, setTransactions] = useState([
     {
       id: 'TXN001',
       type: 'buyer',
@@ -525,26 +317,20 @@ const SecureEscrowApp: React.FC = () => {
       return;
     }
 
-    const amount = parseFloat(newTransaction.amount);
-    if (isNaN(amount)) {
-      alert('จำนวนเงินไม่ถูกต้อง');
-      return;
-    }
-
-    const fee = Math.round(amount * 0.015); // 1.5% fee
+    const fee = Math.round(parseFloat(newTransaction.amount) * 0.015); // 1.5% fee
     const transactionId = `TXN${String(transactions.length + 1).padStart(3, '0')}`;
     
-    const transaction: Transaction = {
+    const transaction = {
       id: transactionId,
-      type: newTransaction.type as 'buyer' | 'seller',
+      type: newTransaction.type,
       item: newTransaction.item,
       description: newTransaction.description,
-      amount: amount,
+      amount: parseFloat(newTransaction.amount),
       fee: fee,
       status: 'waiting_payment',
       otherParty: newTransaction.otherPartyContact,
       otherPartyId: `USR${Math.floor(Math.random() * 900) + 100}`,
-      otherPartyRating: parseFloat((Math.random() * 1 + 4).toFixed(1)),
+      otherPartyRating: (Math.random() * 1 + 4).toFixed(1),
       created: new Date().toISOString().split('T')[0],
       buyerConfirmed: false,
       sellerConfirmed: false,
@@ -592,7 +378,7 @@ const SecureEscrowApp: React.FC = () => {
     );
 
     setShowPaymentModal(false);
-    setSelectedTransaction(prev => prev ? ({ ...prev, status: 'waiting_confirmation' }) : null);
+    setSelectedTransaction(prev => ({ ...prev, status: 'waiting_confirmation' }));
     alert('แจ้งชำระเงินเรียบร้อยแล้ว! ธุรกรรมจะถูกปรับสถานะเมื่อผู้ขายตรวจสอบการชำระเงิน');
   };
 
@@ -632,7 +418,7 @@ const SecureEscrowApp: React.FC = () => {
   const handleSendMessage = () => {
     if (!chatInput.trim() || !selectedTransaction) return;
 
-    const newMessage: ChatMessage = {
+    const newMessage = {
       sender: selectedTransaction.type === 'buyer' ? 'buyer' : 'seller',
       message: chatInput,
       time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
@@ -646,7 +432,7 @@ const SecureEscrowApp: React.FC = () => {
       )
     );
 
-    setSelectedTransaction(prev => prev ? ({ ...prev, chatMessages: [...(prev.chatMessages || []), newMessage] }) : null);
+    setSelectedTransaction(prev => ({ ...prev, chatMessages: [...(prev.chatMessages || []), newMessage] }));
     setChatInput('');
   };
 
@@ -655,8 +441,6 @@ const SecureEscrowApp: React.FC = () => {
       alert('กรุณาเลือกคะแนน');
       return;
     }
-    if (!selectedTransaction) return;
-
     setTransactions(prev =>
       prev.map(txn =>
         txn.id === selectedTransaction.id
@@ -677,14 +461,14 @@ const SecureEscrowApp: React.FC = () => {
     alert('ขอบคุณสำหรับคะแนน!');
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
     if (file) {
       alert(`ไฟล์ "${file.name}" ถูกอัปโหลดแล้ว`);
     }
   };
 
-  const confirmReceived = (transactionId: string) => {
+  const confirmReceived = (transactionId) => {
     setTransactions(prev => 
       prev.map(txn => 
         txn.id === transactionId 
@@ -694,7 +478,7 @@ const SecureEscrowApp: React.FC = () => {
     );
   };
 
-  const confirmSent = (transactionId: string) => {
+  const confirmSent = (transactionId) => {
     setTransactions(prev => 
       prev.map(txn => 
         txn.id === transactionId 
@@ -704,35 +488,12 @@ const SecureEscrowApp: React.FC = () => {
     );
   };
   
-  const handleDisputeSubmission = () => {
-    if (!disputeReason.trim()) {
-      alert('กรุณาระบุเหตุผลในการรายงานปัญหา');
-      return;
-    }
-    
-    if (!selectedTransaction) return;
-    
-    setTransactions(prev =>
-      prev.map(txn =>
-        txn.id === selectedTransaction.id
-          ? { ...txn, status: 'dispute' }
-          : txn
-      )
-    );
-    setShowDisputeModal(false);
-    setSelectedTransaction(null);
-    setCurrentTab('disputes');
-    alert('รายงานปัญหาถูกส่งแล้ว เจ้าหน้าที่จะติดต่อกลับโดยเร็วที่สุด');
-  };
-  
-  const getFilteredTransactions = (): Transaction[] => {
+  const getFilteredTransactions = () => {
     switch(transactionFilter) {
       case 'pending':
         return transactions.filter(t => t.status === 'waiting_payment' || t.status === 'waiting_confirmation');
       case 'completed':
         return transactions.filter(t => t.status === 'completed');
-      case 'disputes':
-        return transactions.filter(t => t.status === 'dispute');
       default:
         return transactions;
     }
@@ -740,7 +501,157 @@ const SecureEscrowApp: React.FC = () => {
 
   const filteredTransactions = getFilteredTransactions();
 
-  const CreateTransactionModal: React.FC = () => (
+  const TabButton = ({ id, label, icon: Icon, active, onClick, badge }) => (
+    <button
+      onClick={() => onClick(id)}
+      className={`relative flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+        active 
+          ? 'bg-blue-600 text-white shadow-lg' 
+          : 'text-gray-600 hover:bg-gray-100'
+      }`}
+    >
+      <Icon size={20} />
+      <span className="hidden md:inline">{label}</span>
+      {badge > 0 && (
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+          {badge}
+        </span>
+      )}
+    </button>
+  );
+
+  const TransactionCard = ({ transaction, onViewDetails }) => {
+    const getStatusColor = (status) => {
+      switch (status) {
+        case 'waiting_payment': return 'text-orange-600 bg-orange-50';
+        case 'waiting_confirmation': return 'text-yellow-600 bg-yellow-50';
+        case 'completed': return 'text-green-600 bg-green-50';
+        case 'dispute': return 'text-red-600 bg-red-50';
+        default: return 'text-gray-600 bg-gray-50';
+      }
+    };
+
+    const getStatusText = (status) => {
+      switch (status) {
+        case 'waiting_payment': return 'รอชำระเงิน';
+        case 'waiting_confirmation': return 'รอการยืนยัน';
+        case 'completed': return 'สำเร็จ';
+        case 'dispute': return 'มีข้อโต้แย้ง';
+        default: return 'ไม่ทราบสถานะ';
+      }
+    };
+
+    return (
+      <div className="bg-white p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-all">
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1">
+            <h3 className="font-semibold text-gray-800 mb-1">{transaction.item}</h3>
+            <p className="text-sm text-gray-600 mb-2">{transaction.description}</p>
+            <div className="flex items-center space-x-4 text-sm text-gray-500">
+              <span>{transaction.type === 'buyer' ? 'ซื้อจาก' : 'ขายให้'}: {transaction.otherParty}</span>
+              <div className="flex items-center space-x-1">
+                <Star size={12} className="text-yellow-400 fill-current" />
+                <span>{transaction.otherPartyRating}</span>
+              </div>
+            </div>
+          </div>
+          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(transaction.status)}`}>
+            {getStatusText(transaction.status)}
+          </span>
+        </div>
+        
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <span className="text-2xl font-bold text-green-600">
+              ฿{transaction.amount.toLocaleString()}
+            </span>
+            <span className="text-sm text-gray-500 ml-2">
+              (ค่าธรรมเนียม ฿{transaction.fee})
+            </span>
+          </div>
+          <span className="text-sm text-gray-500">{transaction.created}</span>
+        </div>
+
+        {transaction.status === 'waiting_payment' && transaction.type === 'buyer' && (
+          <button 
+            onClick={() => {setSelectedTransaction(transaction); setShowPaymentModal(true);}}
+            className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition-colors mb-2"
+          >
+            ชำระเงินเข้า Escrow
+          </button>
+        )}
+        {transaction.status === 'waiting_payment' && transaction.type === 'seller' && (
+          <button 
+            onClick={() => onViewDetails(transaction)}
+            className="w-full bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-colors mb-2"
+          >
+            ดูรายละเอียด
+          </button>
+        )}
+
+        {transaction.status === 'waiting_confirmation' && (
+          <div className="space-y-3 mb-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center space-x-2">
+                <CheckCircle size={16} className={transaction.sellerConfirmed ? 'text-green-500' : 'text-gray-300'} />
+                <span>ผู้ขายยืนยันแล้ว</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <CheckCircle size={16} className={transaction.buyerConfirmed ? 'text-green-500' : 'text-gray-300'} />
+                <span>ผู้ซื้อยืนยันแล้ว</span>
+              </div>
+            </div>
+            
+            <div className="flex space-x-2">
+              {!transaction.buyerConfirmed && transaction.type === 'buyer' && (
+                <button 
+                  onClick={() => confirmReceived(transaction.id)}
+                  className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  ยืนยันรับสินค้า
+                </button>
+              )}
+              {!transaction.sellerConfirmed && transaction.type === 'seller' && (
+                <button 
+                  onClick={() => confirmSent(transaction.id)}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  ยืนยันส่งแล้ว
+                </button>
+              )}
+              <button 
+                onClick={() => onViewDetails(transaction)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                ดูรายละเอียด
+              </button>
+            </div>
+          </div>
+        )}
+
+        {transaction.status === 'completed' && (
+          <div className="flex space-x-2">
+            <button 
+              onClick={() => onViewDetails(transaction)}
+              className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              ดูรายละเอียด
+            </button>
+            {!transaction.rating && (
+              <button 
+                onClick={() => {setSelectedTransaction(transaction); setShowRatingModal(true);}}
+                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
+              >
+                ให้คะแนน
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const CreateTransactionModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl p-6 w-full max-w-md max-h-screen overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">สร้างธุรกรรมใหม่</h2>
@@ -773,9 +684,9 @@ const SecureEscrowApp: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">รายละเอียด</label>
             <textarea 
               value={newTransaction.description}
-              onChange={(e) => setNewTransaction(prev => ({...prev, description: e.target.value}))}
+              onChange={(e) => setNewTransaction(prev => ({...prev, description: e.target.value})))}
               placeholder="อธิบายรายละเอียดสินค้า สภาพ การรับประกัน"
-              rows={3}
+              rows="3"
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -791,7 +702,7 @@ const SecureEscrowApp: React.FC = () => {
             />
             {newTransaction.amount && (
               <p className="text-sm text-gray-500 mt-1">
-                ค่าธรรมเนียม: ฿{Math.round(parseFloat(newTransaction.amount) * 0.015)} (1.5%)
+                ค่าธรรมเนียม: ฿{Math.round(parseFloat(newTransaction.amount || 0) * 0.015)} (1.5%)
               </p>
             )}
           </div>
@@ -828,7 +739,7 @@ const SecureEscrowApp: React.FC = () => {
     </div>
   );
 
-  const JoinTransactionModal: React.FC = () => (
+  const JoinTransactionModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
@@ -863,7 +774,7 @@ const SecureEscrowApp: React.FC = () => {
     </div>
   );
 
-  const PaymentModal: React.FC = () => {
+  const PaymentModal = () => {
     if (!selectedTransaction) return null;
     
     return (
@@ -933,7 +844,7 @@ const SecureEscrowApp: React.FC = () => {
     );
   };
 
-  const KYCModal: React.FC = () => (
+  const KYCModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-screen overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">ยืนยันตัวตน (KYC)</h2>
@@ -967,7 +878,7 @@ const SecureEscrowApp: React.FC = () => {
               value={kycData.address}
               onChange={(e) => setKycData(prev => ({...prev, address: e.target.value}))}
               placeholder="123 ถนนสุขุมวิท แขวง... เขต... จ.กรุงเทพฯ 10110"
-              rows={3}
+              rows="3"
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -1040,7 +951,7 @@ const SecureEscrowApp: React.FC = () => {
     </div>
   );
 
-  const RatingModal: React.FC = () => (
+  const RatingModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl p-6 w-full max-w-md">
         <h2 className="text-xl font-bold mb-4">ให้คะแนนธุรกรรม</h2>
@@ -1058,7 +969,7 @@ const SecureEscrowApp: React.FC = () => {
           value={ratingComment}
           onChange={(e) => setRatingComment(e.target.value)}
           placeholder="เขียนความคิดเห็นเพิ่มเติม (ไม่บังคับ)..."
-          rows={3}
+          rows="3"
           className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
         ></textarea>
         <div className="flex space-x-3 mt-6">
@@ -1079,7 +990,7 @@ const SecureEscrowApp: React.FC = () => {
     </div>
   );
 
-  const DisputeModal: React.FC = () => (
+  const DisputeModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
@@ -1093,7 +1004,7 @@ const SecureEscrowApp: React.FC = () => {
           value={disputeReason}
           onChange={(e) => setDisputeReason(e.target.value)}
           placeholder="อธิบายปัญหา เช่น 'สินค้าที่ได้รับไม่ตรงตามที่ตกลง' หรือ 'ผู้ขายไม่ยอมจัดส่งสินค้า'..."
-          rows={4}
+          rows="4"
           className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500"
         ></textarea>
         <div className="flex space-x-3 mt-6">
@@ -1104,7 +1015,23 @@ const SecureEscrowApp: React.FC = () => {
             ยกเลิก
           </button>
           <button
-            onClick={handleDisputeSubmission}
+            onClick={() => {
+              if (disputeReason.trim()) {
+                setTransactions(prev =>
+                  prev.map(txn =>
+                    txn.id === selectedTransaction.id
+                      ? { ...txn, status: 'dispute' }
+                      : txn
+                  )
+                );
+                setShowDisputeModal(false);
+                setSelectedTransaction(null);
+                setCurrentTab('disputes');
+                alert('รายงานปัญหาถูกส่งแล้ว เจ้าหน้าที่จะติดต่อกลับโดยเร็วที่สุด');
+              } else {
+                alert('กรุณาระบุเหตุผลในการรายงานปัญหา');
+              }
+            }}
             className="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
           >
             ส่งรายงาน
@@ -1114,7 +1041,7 @@ const SecureEscrowApp: React.FC = () => {
     </div>
   );
   
-  const Dashboard: React.FC = () => {
+  const Dashboard = () => {
     const waitingTransactions = transactions.filter(t => t.status === 'waiting_confirmation' || t.status === 'waiting_payment');
     
     return (
@@ -1218,7 +1145,7 @@ const SecureEscrowApp: React.FC = () => {
     );
   };
 
-  const TransactionList: React.FC = () => (
+  const TransactionList = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <h2 className="text-2xl font-bold text-gray-800">ธุรกรรมทั้งหมด</h2>
@@ -1274,7 +1201,7 @@ const SecureEscrowApp: React.FC = () => {
     </div>
   );
 
-  const SecurityCenter: React.FC = () => (
+  const SecurityCenter = () => (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-800">ศูนย์ความปลอดภัย</h2>
       
@@ -1414,36 +1341,20 @@ const SecureEscrowApp: React.FC = () => {
     </div>
   );
 
-  const DisputeCenter: React.FC = () => {
-    const disputeTransactions = transactions.filter(t => t.status === 'dispute');
-    
-    return (
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-800">ศูนย์จัดการข้อโต้แย้ง</h2>
-        
-        {disputeTransactions.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {disputeTransactions.map(transaction => (
-              <TransactionCard 
-                key={transaction.id} 
-                transaction={transaction} 
-                onViewDetails={(txn) => setSelectedTransaction(txn)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white p-12 rounded-xl border border-gray-200 text-center">
-            <CheckCircle size={64} className="text-green-500 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">ไม่มีข้อโต้แย้ง</h3>
-            <p className="text-gray-600 mb-6">ธุรกรรมทั้งหมดของคุณเป็นไปอย่างราบรื่น</p>
-            <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-              เรียนรู้เพิ่มเติมเกี่ยวกับการป้องกันการโกง
-            </button>
-          </div>
-        )}
+  const DisputeCenter = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-800">ศูนย์จัดการข้อโต้แย้ง</h2>
+      
+      <div className="bg-white p-12 rounded-xl border border-gray-200 text-center">
+        <CheckCircle size={64} className="text-green-500 mx-auto mb-4" />
+        <h3 className="text-xl font-semibold text-gray-800 mb-2">ไม่มีข้อโต้แย้ง</h3>
+        <p className="text-gray-600 mb-6">ธุรกรรมทั้งหมดของคุณเป็นไปอย่างราบรื่น</p>
+        <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+          เรียนรู้เพิ่มเติมเกี่ยวกับการป้องกันการโกง
+        </button>
       </div>
-    );
-  };
+    </div>
+  );
 
   const renderContent = () => {
     switch (currentTab) {
@@ -1568,7 +1479,6 @@ const SecureEscrowApp: React.FC = () => {
           setChatInput={setChatInput}
           handleSendMessage={handleSendMessage}
           setShowDisputeModal={setShowDisputeModal}
-          setShowRatingModal={setShowRatingModal}
         />
       }
       {showRatingModal && <RatingModal />}
