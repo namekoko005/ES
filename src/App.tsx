@@ -438,7 +438,7 @@ const SecureEscrowApp = () => {
                 />
                 <TabButton 
                   id="disputes" 
-                  label="ข้อโต้แย้ง" 
+                  label="ร้องเรียน" 
                   icon={AlertTriangle} 
                   active={currentTab === 'disputes'} 
                   onClick={setCurrentTab} 
