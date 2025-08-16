@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shield, Users, Wallet, CheckCircle, AlertTriangle, MessageSquare, Star, Clock, TrendingUp, Lock, Eye, FileText, Plus, Send, Camera, CreditCard, Phone, Mail, MapPin, User, X, Search } from 'lucide-react';
 
 // แยกคอมโพเนนต์ TransactionDetailModal ออกมาข้างนอก
@@ -8,7 +8,8 @@ const TransactionDetailModal = ({
   chatInput,
   setChatInput,
   handleSendMessage,
-  setShowDisputeModal
+  setShowDisputeModal,
+  setShowRatingModal // ✨ เพิ่ม props ที่จำเป็น
 }) => {
   if (!selectedTransaction) return null;
 
@@ -206,7 +207,7 @@ const TransactionDetailModal = ({
             )}
             {selectedTransaction.status === 'completed' && !selectedTransaction.rating && (
               <button 
-                onClick={() => {setSelectedTransaction(selectedTransaction); setShowRatingModal(true);}}
+                onClick={() => setShowRatingModal(true)} // ✨ แก้ไขให้เรียกแค่ setShowRatingModal
                 className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
               >
                 ให้คะแนน
@@ -233,7 +234,7 @@ const SecureEscrowApp = () => {
   const [newRating, setNewRating] = useState(0);
   const [ratingComment, setRatingComment] = useState('');
   const [disputeReason, setDisputeReason] = useState('');
-  const [chatInput, setChatInput] = useState(''); // ใช้ state นี้สำหรับ input chat
+  const [chatInput, setChatInput] = useState('');
   const [transactionFilter, setTransactionFilter] = useState('all');
   const [joinTransactionId, setJoinTransactionId] = useState('');
 
@@ -488,12 +489,33 @@ const SecureEscrowApp = () => {
     );
   };
   
+  const handleDisputeSubmission = () => {
+    if (!disputeReason.trim()) {
+      alert('กรุณาระบุเหตุผลในการรายงานปัญหา');
+      return;
+    }
+    
+    setTransactions(prev =>
+      prev.map(txn =>
+        txn.id === selectedTransaction.id
+          ? { ...txn, status: 'dispute' }
+          : txn
+      )
+    );
+    setShowDisputeModal(false);
+    setSelectedTransaction(null);
+    setCurrentTab('disputes');
+    alert('รายงานปัญหาถูกส่งแล้ว เจ้าหน้าที่จะติดต่อกลับโดยเร็วที่สุด');
+  };
+  
   const getFilteredTransactions = () => {
     switch(transactionFilter) {
       case 'pending':
         return transactions.filter(t => t.status === 'waiting_payment' || t.status === 'waiting_confirmation');
       case 'completed':
         return transactions.filter(t => t.status === 'completed');
+      case 'disputes':
+        return transactions.filter(t => t.status === 'dispute');
       default:
         return transactions;
     }
@@ -684,7 +706,7 @@ const SecureEscrowApp = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">รายละเอียด</label>
             <textarea 
               value={newTransaction.description}
-              onChange={(e) => setNewTransaction(prev => ({...prev, description: e.target.value})))}
+              onChange={(e) => setNewTransaction(prev => ({...prev, description: e.target.value}))}
               placeholder="อธิบายรายละเอียดสินค้า สภาพ การรับประกัน"
               rows="3"
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1015,23 +1037,7 @@ const SecureEscrowApp = () => {
             ยกเลิก
           </button>
           <button
-            onClick={() => {
-              if (disputeReason.trim()) {
-                setTransactions(prev =>
-                  prev.map(txn =>
-                    txn.id === selectedTransaction.id
-                      ? { ...txn, status: 'dispute' }
-                      : txn
-                  )
-                );
-                setShowDisputeModal(false);
-                setSelectedTransaction(null);
-                setCurrentTab('disputes');
-                alert('รายงานปัญหาถูกส่งแล้ว เจ้าหน้าที่จะติดต่อกลับโดยเร็วที่สุด');
-              } else {
-                alert('กรุณาระบุเหตุผลในการรายงานปัญหา');
-              }
-            }}
+            onClick={handleDisputeSubmission} // ✨ แก้ไขให้เรียกใช้ฟังก์ชันใหม่
             className="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
           >
             ส่งรายงาน
@@ -1341,20 +1347,36 @@ const SecureEscrowApp = () => {
     </div>
   );
 
-  const DisputeCenter = () => (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800">ศูนย์จัดการข้อโต้แย้ง</h2>
-      
-      <div className="bg-white p-12 rounded-xl border border-gray-200 text-center">
-        <CheckCircle size={64} className="text-green-500 mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-gray-800 mb-2">ไม่มีข้อโต้แย้ง</h3>
-        <p className="text-gray-600 mb-6">ธุรกรรมทั้งหมดของคุณเป็นไปอย่างราบรื่น</p>
-        <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-          เรียนรู้เพิ่มเติมเกี่ยวกับการป้องกันการโกง
-        </button>
+  const DisputeCenter = () => {
+    const disputeTransactions = transactions.filter(t => t.status === 'dispute');
+    
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-800">ศูนย์จัดการข้อโต้แย้ง</h2>
+        
+        {disputeTransactions.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {disputeTransactions.map(transaction => (
+              <TransactionCard 
+                key={transaction.id} 
+                transaction={transaction} 
+                onViewDetails={(txn) => setSelectedTransaction(txn)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white p-12 rounded-xl border border-gray-200 text-center">
+            <CheckCircle size={64} className="text-green-500 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">ไม่มีข้อโต้แย้ง</h3>
+            <p className="text-gray-600 mb-6">ธุรกรรมทั้งหมดของคุณเป็นไปอย่างราบรื่น</p>
+            <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+              เรียนรู้เพิ่มเติมเกี่ยวกับการป้องกันการโกง
+            </button>
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderContent = () => {
     switch (currentTab) {
@@ -1479,6 +1501,7 @@ const SecureEscrowApp = () => {
           setChatInput={setChatInput}
           handleSendMessage={handleSendMessage}
           setShowDisputeModal={setShowDisputeModal}
+          setShowRatingModal={setShowRatingModal} // ✨ ส่ง props เพิ่มเติม
         />
       }
       {showRatingModal && <RatingModal />}
