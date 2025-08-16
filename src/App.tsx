@@ -331,7 +331,7 @@ const SecurityCenter = () => (
 const SecureEscrowApp = () => {
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [user] = useState<User>({
-    name: 'สมชาย ใจดี',
+    name: 'เทพไทย กาญจนโภคิน',
     verified: true,
     rating: 4.8,
     totalTransactions: 47,
