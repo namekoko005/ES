@@ -1,9 +1,46 @@
-import React, { useState } from 'react';
-import { Shield, Users, Wallet, CheckCircle, AlertTriangle, MessageSquare, Star, Clock, TrendingUp, Lock, Eye, FileText } from 'lucide-react';
+import { useState } from 'react';
+import { Shield, Wallet, CheckCircle, AlertTriangle, Star, Clock, TrendingUp, Lock, Eye, FileText } from 'lucide-react';
+
+// Interfaces for better type safety
+interface Transaction {
+  id: string;
+  type: 'buyer' | 'seller';
+  item: string;
+  amount: number;
+  status: 'waiting_confirmation' | 'completed' | 'dispute';
+  otherParty: string;
+  created: string;
+  buyerConfirmed: boolean;
+  sellerConfirmed: boolean;
+}
+
+interface Dispute {
+  id: string;
+  transactionId: string;
+  issue: string;
+  status: 'investigating';
+  created: string;
+}
+
+interface User {
+  name: string;
+  verified: boolean;
+  rating: number;
+  totalTransactions: number;
+  balance: number;
+}
 
 // === Components
 // TabButton Component
-const TabButton = ({ id, label, icon: Icon, active, onClick }) => (
+interface TabButtonProps {
+  id: string;
+  label: string;
+  icon: any; // Using `any` for the icon component for simplicity
+  active: boolean;
+  onClick: (id: string) => void;
+}
+
+const TabButton: React.FC<TabButtonProps> = ({ id, label, icon: Icon, active, onClick }) => (
   <button
     onClick={() => onClick(id)}
     className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
@@ -18,8 +55,12 @@ const TabButton = ({ id, label, icon: Icon, active, onClick }) => (
 );
 
 // TransactionCard Component
-const TransactionCard = ({ transaction }) => {
-  const getStatusColor = (status) => {
+interface TransactionCardProps {
+  transaction: Transaction;
+}
+
+const TransactionCard: React.FC<TransactionCardProps> = ({ transaction }) => {
+  const getStatusColor = (status: Transaction['status']) => {
     switch (status) {
       case 'waiting_confirmation': return 'text-yellow-600 bg-yellow-50';
       case 'completed': return 'text-green-600 bg-green-50';
@@ -28,7 +69,7 @@ const TransactionCard = ({ transaction }) => {
     }
   };
 
-  const getStatusText = (status) => {
+  const getStatusText = (status: Transaction['status']) => {
     switch (status) {
       case 'waiting_confirmation': return 'รอการยืนยัน';
       case 'completed': return 'สำเร็จ';
@@ -84,7 +125,12 @@ const TransactionCard = ({ transaction }) => {
 };
 
 // Dashboard Component
-const Dashboard = ({ user, transactions }) => (
+interface DashboardProps {
+  user: User;
+  transactions: Transaction[];
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ user, transactions }) => (
   <div className="space-y-6">
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
       <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl text-white">
@@ -139,7 +185,11 @@ const Dashboard = ({ user, transactions }) => (
 );
 
 // TransactionList Component
-const TransactionList = ({ transactions }) => (
+interface TransactionListProps {
+  transactions: Transaction[];
+}
+
+const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => (
   <div className="space-y-6">
     <div className="flex justify-between items-center">
       <h2 className="text-2xl font-bold text-gray-800">ธุรกรรมทั้งหมด</h2>
@@ -156,7 +206,11 @@ const TransactionList = ({ transactions }) => (
 );
 
 // DisputeCenter Component
-const DisputeCenter = ({ disputes }) => (
+interface DisputeCenterProps {
+  disputes: Dispute[];
+}
+
+const DisputeCenter: React.FC<DisputeCenterProps> = ({ disputes }) => (
   <div className="space-y-6">
     <h2 className="text-2xl font-bold text-gray-800">ศูนย์จัดการข้อโต้แย้ง</h2>
     {disputes.length > 0 ? (
@@ -276,7 +330,7 @@ const SecurityCenter = () => (
 // Main App Component
 const SecureEscrowApp = () => {
   const [currentTab, setCurrentTab] = useState('dashboard');
-  const [user, setUser] = useState({
+  const [user] = useState<User>({
     name: 'สมชาย ใจดี',
     verified: true,
     rating: 4.8,
@@ -284,7 +338,7 @@ const SecureEscrowApp = () => {
     balance: 15420
   });
 
-  const [transactions, setTransactions] = useState([
+  const [transactions] = useState<Transaction[]>([
     {
       id: 'TXN001',
       type: 'buyer',
@@ -309,7 +363,7 @@ const SecureEscrowApp = () => {
     }
   ]);
 
-  const [disputes, setDisputes] = useState([
+  const [disputes] = useState<Dispute[]>([
     {
       id: 'DIS001',
       transactionId: 'TXN003',
@@ -318,8 +372,6 @@ const SecureEscrowApp = () => {
       created: '2025-08-12'
     }
   ]);
-
-  // The 'useEffect' import was removed because it was not being used.
 
   const renderContent = () => {
     switch (currentTab) {
@@ -338,6 +390,7 @@ const SecureEscrowApp = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -362,8 +415,10 @@ const SecureEscrowApp = () => {
           </div>
         </div>
       </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar */}
           <div className="lg:w-64">
             <div className="bg-white rounded-xl p-6 border border-gray-200">
               <nav className="space-y-2">
@@ -398,6 +453,8 @@ const SecureEscrowApp = () => {
               </nav>
             </div>
           </div>
+
+          {/* Main Content */}
           <div className="flex-1">
             {renderContent()}
           </div>
